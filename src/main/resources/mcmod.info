@@ -1,0 +1,15 @@
+[
+{
+  "modid": "AllTheTrees",
+  "name": "All the Trees",
+  "description": "Adds Forestry compatability to trees from other mods.",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "",
+  "updateUrl": "",
+  "authors": ["impiaaa"],
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]
