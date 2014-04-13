@@ -51,14 +51,63 @@ public class ModTreeSpecies implements IIconProvider, IAlleleTreeSpecies {
 	ItemStack underlyingSapling;
 	ItemStack underlyingLeaves;
 	ItemStack underlyingLog;
+
+	public ModTreeSpecies(int girth, Class<? extends WorldGenerator> gen,
+			IAlleleFruit fruit, int color, String binomial, String uid,
+			String description, ItemStack underlyingSapling,
+			ItemStack underlyingLeaves, ItemStack underlyingLog) {
+		super();
+		this.girth = girth;
+		this.gen = gen;
+		this.fruit = fruit;
+		this.color = color;
+		this.binomial = binomial;
+		this.uid = uid;
+		this.description = description;
+		this.underlyingSapling = underlyingSapling;
+		this.underlyingLeaves = underlyingLeaves;
+		this.underlyingLog = underlyingLog;
+	}
+
+	public ModTreeSpecies(int girth, Class<? extends WorldGenerator> gen,
+			IAlleleFruit fruit, int color, String binomial, String uid,
+			IClassification branch, String description,
+			ItemStack underlyingSapling, ItemStack underlyingLeaves,
+			ItemStack underlyingLog) {
+		this(girth, gen, fruit, color, binomial, uid, description,
+				underlyingSapling, underlyingLeaves, underlyingLog);
+		this.branch = branch;
+		this.branch.addMemberSpecies(this);
+	}
+
+	public ModTreeSpecies(Class<? extends WorldGenerator> gen, int color,
+			String binomial, String uid, String genus,
+			ItemStack underlyingSapling, ItemStack underlyingLeaves,
+			ItemStack underlyingLog) {
+		this(1, gen, null, color, binomial, uid, null, underlyingSapling,
+				underlyingLeaves, underlyingLog);
+		this.branch = AlleleManager.alleleRegistry.getClassification("genus."
+				+ this.uid);
+		if (this.branch == null) {
+			this.branch = AlleleManager.alleleRegistry
+					.createAndRegisterClassification(
+							IClassification.EnumClassLevel.GENUS, this.uid,
+							genus);
+		}
+		this.branch.addMemberSpecies(this);
+	}
 	
+	public void register() {
+		AlleleManager.alleleRegistry.registerAllele(this);
+		IAllele template[] = Util.getTreeRoot().getDefaultTemplate();
+		template[EnumTreeChromosome.SPECIES.ordinal()] = this;
+		Util.getTreeRoot().registerTemplate(template);
+		AlleleManager.ersatzSpecimen.put(this.underlyingLeaves, Util.getTreeRoot().templateAsIndividual(template));
+		AlleleManager.ersatzSaplings.put(this.underlyingSapling, Util.getTreeRoot().templateAsIndividual(template));
+	}
+
 	public enum IconType {
-		Sapling,
-		LeavesPlain,
-		LeavesChanged,
-		LeavesFancy,
-		LogSide,
-		LogInside;
+		Sapling, LeavesPlain, LeavesChanged, LeavesFancy, LogSide, LogInside;
 		public static IconType get(int ord) {
 			for (IconType o : IconType.values()) {
 				if (o.ordinal() == ord) {
@@ -173,7 +222,7 @@ public class ModTreeSpecies implements IIconProvider, IAlleleTreeSpecies {
 
 	@Override
 	public String getUID() {
-		return "net.boatcake.species."+uid;
+		return "net.boatcake.species." + uid;
 	}
 
 	@Override
@@ -183,7 +232,8 @@ public class ModTreeSpecies implements IIconProvider, IAlleleTreeSpecies {
 
 	@Override
 	public String getName() {
-		return underlyingSapling.getDisplayName().replaceFirst(" "+EnumGermlingType.SAPLING.getName(), "");
+		return underlyingSapling.getDisplayName().replaceFirst(
+				" " + EnumGermlingType.SAPLING.getName(), "");
 	}
 
 	@Override
@@ -223,8 +273,8 @@ public class ModTreeSpecies implements IIconProvider, IAlleleTreeSpecies {
 
 	@Override
 	public Class<? extends WorldGenerator>[] getGeneratorClasses() {
-		//Object[] result = {this.gen};
-		//return (Class<? extends WorldGenerator>[]) result;
+		// Object[] result = {this.gen};
+		// return (Class<? extends WorldGenerator>[]) result;
 		return null;
 	}
 
@@ -248,7 +298,8 @@ public class ModTreeSpecies implements IIconProvider, IAlleleTreeSpecies {
 	@SideOnly(Side.CLIENT)
 	public Icon getGermlingIcon(EnumGermlingType type, int renderPass) {
 		if (type == EnumGermlingType.POLLEN) {
-			return GameRegistry.findItem("Forestry", "pollen").getIconFromDamageForRenderPass(0, renderPass);
+			return GameRegistry.findItem("Forestry", "pollen")
+					.getIconFromDamageForRenderPass(0, renderPass);
 		}
 
 		return this.underlyingSapling.getIconIndex();
@@ -265,7 +316,7 @@ public class ModTreeSpecies implements IIconProvider, IAlleleTreeSpecies {
 		if (underlyingLog == null) {
 			return new ItemStack[0];
 		}
-		return new ItemStack[] {underlyingLog};
+		return new ItemStack[] { underlyingLog };
 	}
 
 	@Override
