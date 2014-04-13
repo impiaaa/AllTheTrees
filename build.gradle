@@ -11,14 +11,28 @@ buildscript {
     }
 }
 
+repositories {
+    ivy {
+        name 'Forge FS legacy'
+        artifactPattern "http://files.minecraftforge.net/[module]/[module]-dev-[revision].[ext]"
+    }
+    maven {
+        name 'ForgeFS'
+        url 'http://files.minecraftforge.net/maven'
+     }
+}
+
 apply plugin: 'forge'
+
+dependencies {
+}
 
 version = "1.0"
 group= "net.boatcake.allthetrees"
 archivesBaseName = "All the Trees"
 
 minecraft {
-	version = "1.6.4-9.11.1.965"
+	version = "1.6.4-9.11.1.964"
 }
 
 processResources
