@@ -119,6 +119,8 @@ public class ModTreeSpecies implements IIconProvider, IAlleleTreeSpecies {
 				underlyingLeaves, underlyingLog);
 		IClassification branch = null;
 		IClassification child = null;
+		boolean newChild = false;
+		boolean newBranch = false;
 		for (int i = classification.length-2; i >= 0; i--) {
 			if (classification[i] == null) {
 				continue;
@@ -128,13 +130,22 @@ public class ModTreeSpecies implements IIconProvider, IAlleleTreeSpecies {
 			branch = AlleleManager.alleleRegistry.getClassification(level.name + "." + classLower);
 			if (branch == null) {
 				branch = AlleleManager.alleleRegistry.createAndRegisterClassification(level.level, classLower, classification[i]);
-				if (child != null) {
-					branch.addMemberGroup(child);
-				}
+				System.out.println("Registering "+level.name+" "+classification[i]);
+				newBranch = true;
+			}
+			else {
+				newBranch = false;
+			}
+			if (child != null && newChild) {
+				branch.addMemberGroup(child);
+				System.out.println("Adding child "+child.getName()+" to "+branch.getName());
+			}
+			if (level == ClassificationLevel.GENUS) {
+				this.branch = branch;
 			}
 			child = branch;
+			newChild = newBranch;
 		}
-		this.branch = branch;
 		this.branch.addMemberSpecies(this);
 	}
 	
