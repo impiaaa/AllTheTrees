@@ -35,6 +35,7 @@ import forestry.api.core.ItemInterface;
 import forestry.api.genetics.AlleleManager;
 import forestry.api.genetics.IAllele;
 import forestry.api.genetics.IClassification;
+import forestry.api.genetics.IClassification.EnumClassLevel;
 import forestry.api.genetics.IFruitFamily;
 import forestry.api.genetics.IIndividual;
 import forestry.api.genetics.IMutation;
@@ -44,7 +45,7 @@ public class ModTreeSpecies implements IIconProvider, IAlleleTreeSpecies {
 	Class<? extends WorldGenerator> gen;
 	IAlleleFruit fruit = null;
 	int color;
-	String binomial;
+	String species;
 	String uid;
 	IClassification branch;
 	String description;
@@ -53,7 +54,7 @@ public class ModTreeSpecies implements IIconProvider, IAlleleTreeSpecies {
 	ItemStack underlyingLog;
 
 	public ModTreeSpecies(int girth, Class<? extends WorldGenerator> gen,
-			IAlleleFruit fruit, int color, String binomial, String uid,
+			IAlleleFruit fruit, int color, String species, String uid,
 			String description, ItemStack underlyingSapling,
 			ItemStack underlyingLeaves, ItemStack underlyingLog) {
 		super();
@@ -61,7 +62,7 @@ public class ModTreeSpecies implements IIconProvider, IAlleleTreeSpecies {
 		this.gen = gen;
 		this.fruit = fruit;
 		this.color = color;
-		this.binomial = binomial;
+		this.species = species;
 		this.uid = uid;
 		this.description = description;
 		this.underlyingSapling = underlyingSapling;
@@ -70,30 +71,70 @@ public class ModTreeSpecies implements IIconProvider, IAlleleTreeSpecies {
 	}
 
 	public ModTreeSpecies(int girth, Class<? extends WorldGenerator> gen,
-			IAlleleFruit fruit, int color, String binomial, String uid,
+			IAlleleFruit fruit, int color, String species, String uid,
 			IClassification branch, String description,
 			ItemStack underlyingSapling, ItemStack underlyingLeaves,
 			ItemStack underlyingLog) {
-		this(girth, gen, fruit, color, binomial, uid, description,
+		this(girth, gen, fruit, color, species, uid, description,
 				underlyingSapling, underlyingLeaves, underlyingLog);
 		this.branch = branch;
 		this.branch.addMemberSpecies(this);
 	}
 
+	private enum ClassificationLevel {
+		DOMAIN(EnumClassLevel.DOMAIN, 0, "domain"),
+		KINGDOM(EnumClassLevel.KINGDOM, 1, "kingdom"),
+		PHYLUM(EnumClassLevel.PHYLUM, 2, "phylum"),
+		DIVISION(EnumClassLevel.DIVISION, 3, "division"),
+		CLASS(EnumClassLevel.CLASS, 4, "class"),
+		ORDER(EnumClassLevel.ORDER, 5, "order"),
+		FAMILY(EnumClassLevel.FAMILY, 6, "family"),
+		SUBFAMILY(EnumClassLevel.SUBFAMILY, 7, "subfamily"),
+		TRIBE(EnumClassLevel.TRIBE, 8, "tribe"),
+		GENUS(EnumClassLevel.GENUS, 9, "genus"),
+		SPECIES(null, 10, null);
+		public EnumClassLevel level;
+		public int number;
+		public String name;
+		ClassificationLevel(EnumClassLevel level, int number, String name) {
+			this.level = level;
+			this.number = number;
+			this.name = name;
+		}
+		public static ClassificationLevel get(int n) {
+			for (ClassificationLevel l : ClassificationLevel.values()) {
+				if (l.number == n) {
+					return l;
+				}
+			}
+			return null;
+		}
+	}
+	
 	public ModTreeSpecies(Class<? extends WorldGenerator> gen, int color,
-			String binomial, String uid, String genus,
+			String[] classification, String uid,
 			ItemStack underlyingSapling, ItemStack underlyingLeaves,
 			ItemStack underlyingLog) {
-		this(1, gen, null, color, binomial, uid, null, underlyingSapling,
+		this(1, gen, null, color, classification[classification.length-1], uid, null, underlyingSapling,
 				underlyingLeaves, underlyingLog);
-		this.branch = AlleleManager.alleleRegistry.getClassification("genus."
-				+ this.uid);
-		if (this.branch == null) {
-			this.branch = AlleleManager.alleleRegistry
-					.createAndRegisterClassification(
-							IClassification.EnumClassLevel.GENUS, this.uid,
-							genus);
+		IClassification branch = null;
+		IClassification child = null;
+		for (int i = classification.length-2; i >= 0; i--) {
+			if (classification[i] == null) {
+				continue;
+			}
+			ClassificationLevel level = ClassificationLevel.get(i+(ClassificationLevel.SPECIES.number-classification.length+1));
+			String classLower = (level == ClassificationLevel.GENUS) ? ("trees."+classification[i].toLowerCase()) : (classification[i].toLowerCase());
+			branch = AlleleManager.alleleRegistry.getClassification(level.name + "." + classLower);
+			if (branch == null) {
+				branch = AlleleManager.alleleRegistry.createAndRegisterClassification(level.level, classLower, classification[i]);
+				if (child != null) {
+					branch.addMemberGroup(child);
+				}
+			}
+			child = branch;
 		}
+		this.branch = branch;
 		this.branch.addMemberSpecies(this);
 	}
 	
@@ -125,7 +166,7 @@ public class ModTreeSpecies implements IIconProvider, IAlleleTreeSpecies {
 
 	@Override
 	public String getBinomial() {
-		return binomial;
+		return species;
 	}
 
 	@Override
