@@ -1,7 +1,7 @@
 [
 {
   "modid": "AllTheTrees",
-  "name": "All the Trees",
+  "name": "All the Trees!",
   "description": "Adds Forestry compatability to trees from other mods.",
   "version": "${version}",
   "mcversion": "${mcversion}",
