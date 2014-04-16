@@ -4,18 +4,14 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import net.minecraft.block.Block;
 import net.minecraft.client.renderer.texture.IconRegister;
-import net.minecraft.client.resources.I18n;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.Icon;
-import net.minecraft.util.MouseHelper;
 import net.minecraft.world.World;
 import net.minecraft.world.gen.feature.WorldGenerator;
 import net.minecraftforge.common.EnumPlantType;
 
 import org.apache.commons.lang3.StringUtils;
-import org.lwjgl.input.Mouse;
 
 import cpw.mods.fml.common.ModContainer;
 import cpw.mods.fml.common.ModMetadata;
@@ -24,14 +20,12 @@ import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import forestry.api.arboriculture.EnumGermlingType;
 import forestry.api.arboriculture.EnumTreeChromosome;
-import forestry.api.arboriculture.IAlleleFruit;
 import forestry.api.arboriculture.IAlleleTreeSpecies;
 import forestry.api.arboriculture.ITree;
 import forestry.api.arboriculture.ITreeRoot;
 import forestry.api.core.EnumHumidity;
 import forestry.api.core.EnumTemperature;
 import forestry.api.core.IIconProvider;
-import forestry.api.core.ItemInterface;
 import forestry.api.genetics.AlleleManager;
 import forestry.api.genetics.IAllele;
 import forestry.api.genetics.IClassification;
@@ -41,9 +35,7 @@ import forestry.api.genetics.IIndividual;
 import forestry.api.genetics.IMutation;
 
 public class ModTreeSpecies implements IIconProvider, IAlleleTreeSpecies {
-	int girth = 1;
-	Class<? extends WorldGenerator> gen;
-	IAlleleFruit fruit = null;
+	WorldGenerator gen;
 	int color;
 	String species;
 	String uid;
@@ -52,15 +44,14 @@ public class ModTreeSpecies implements IIconProvider, IAlleleTreeSpecies {
 	ItemStack underlyingSapling;
 	ItemStack underlyingLeaves;
 	ItemStack underlyingLog;
+	IAllele template[];
 
-	public ModTreeSpecies(int girth, Class<? extends WorldGenerator> gen,
-			IAlleleFruit fruit, int color, String species, String uid,
-			String description, ItemStack underlyingSapling,
-			ItemStack underlyingLeaves, ItemStack underlyingLog) {
+	public ModTreeSpecies(WorldGenerator gen, IAllele template[], int color,
+			String species, String uid, String description,
+			ItemStack underlyingSapling, ItemStack underlyingLeaves,
+			ItemStack underlyingLog) {
 		super();
-		this.girth = girth;
 		this.gen = gen;
-		this.fruit = fruit;
 		this.color = color;
 		this.species = species;
 		this.uid = uid;
@@ -68,39 +59,40 @@ public class ModTreeSpecies implements IIconProvider, IAlleleTreeSpecies {
 		this.underlyingSapling = underlyingSapling;
 		this.underlyingLeaves = underlyingLeaves;
 		this.underlyingLog = underlyingLog;
+		this.template = template;
 	}
 
-	public ModTreeSpecies(int girth, Class<? extends WorldGenerator> gen,
-			IAlleleFruit fruit, int color, String species, String uid,
-			IClassification branch, String description,
+	public ModTreeSpecies(WorldGenerator gen, int color, String species,
+			String uid, IClassification branch, String description,
 			ItemStack underlyingSapling, ItemStack underlyingLeaves,
 			ItemStack underlyingLog) {
-		this(girth, gen, fruit, color, species, uid, description,
-				underlyingSapling, underlyingLeaves, underlyingLog);
+		this(gen, Util.getTreeRoot().getDefaultTemplate(), color, species, uid,
+				description, underlyingSapling, underlyingLeaves, underlyingLog);
 		this.branch = branch;
 		this.branch.addMemberSpecies(this);
 	}
 
 	private enum ClassificationLevel {
-		DOMAIN(EnumClassLevel.DOMAIN, 0, "domain"),
-		KINGDOM(EnumClassLevel.KINGDOM, 1, "kingdom"),
-		PHYLUM(EnumClassLevel.PHYLUM, 2, "phylum"),
-		DIVISION(EnumClassLevel.DIVISION, 3, "division"),
-		CLASS(EnumClassLevel.CLASS, 4, "class"),
-		ORDER(EnumClassLevel.ORDER, 5, "order"),
-		FAMILY(EnumClassLevel.FAMILY, 6, "family"),
-		SUBFAMILY(EnumClassLevel.SUBFAMILY, 7, "subfamily"),
-		TRIBE(EnumClassLevel.TRIBE, 8, "tribe"),
-		GENUS(EnumClassLevel.GENUS, 9, "genus"),
-		SPECIES(null, 10, null);
+		DOMAIN(EnumClassLevel.DOMAIN, 0, "domain"), KINGDOM(
+				EnumClassLevel.KINGDOM, 1, "kingdom"), PHYLUM(
+				EnumClassLevel.PHYLUM, 2, "phylum"), DIVISION(
+				EnumClassLevel.DIVISION, 3, "division"), CLASS(
+				EnumClassLevel.CLASS, 4, "class"), ORDER(EnumClassLevel.ORDER,
+				5, "order"), FAMILY(EnumClassLevel.FAMILY, 6, "family"), SUBFAMILY(
+				EnumClassLevel.SUBFAMILY, 7, "subfamily"), TRIBE(
+				EnumClassLevel.TRIBE, 8, "tribe"), GENUS(EnumClassLevel.GENUS,
+				9, "genus"), SPECIES(null, 10, null);
+
 		public EnumClassLevel level;
 		public int number;
 		public String name;
+
 		ClassificationLevel(EnumClassLevel level, int number, String name) {
 			this.level = level;
 			this.number = number;
 			this.name = name;
 		}
+
 		public static ClassificationLevel get(int n) {
 			for (ClassificationLevel l : ClassificationLevel.values()) {
 				if (l.number == n) {
@@ -110,35 +102,42 @@ public class ModTreeSpecies implements IIconProvider, IAlleleTreeSpecies {
 			return null;
 		}
 	}
-	
-	public ModTreeSpecies(Class<? extends WorldGenerator> gen, int color,
-			String[] classification, String uid,
-			ItemStack underlyingSapling, ItemStack underlyingLeaves,
-			ItemStack underlyingLog) {
-		this(1, gen, null, color, classification[classification.length-1], uid, null, underlyingSapling,
-				underlyingLeaves, underlyingLog);
+
+	public ModTreeSpecies(WorldGenerator gen, int color,
+			String[] classification, String uid, ItemStack underlyingSapling,
+			ItemStack underlyingLeaves, ItemStack underlyingLog) {
+		this(gen, Util.getTreeRoot().getDefaultTemplate(), color,
+				classification[classification.length - 1], uid, null,
+				underlyingSapling, underlyingLeaves, underlyingLog);
 		IClassification branch = null;
 		IClassification child = null;
 		boolean newChild = false;
 		boolean newBranch = false;
-		for (int i = classification.length-2; i >= 0; i--) {
+		for (int i = classification.length - 2; i >= 0; i--) {
 			if (classification[i] == null) {
 				continue;
 			}
-			ClassificationLevel level = ClassificationLevel.get(i+(ClassificationLevel.SPECIES.number-classification.length+1));
-			String classLower = (level == ClassificationLevel.GENUS) ? ("trees."+classification[i].toLowerCase()) : (classification[i].toLowerCase());
-			branch = AlleleManager.alleleRegistry.getClassification(level.name + "." + classLower);
+			ClassificationLevel level = ClassificationLevel.get(i
+					+ (ClassificationLevel.SPECIES.number
+							- classification.length + 1));
+			String classLower = (level == ClassificationLevel.GENUS) ? ("trees." + classification[i]
+					.toLowerCase()) : (classification[i].toLowerCase());
+			branch = AlleleManager.alleleRegistry.getClassification(level.name
+					+ "." + classLower);
 			if (branch == null) {
-				branch = AlleleManager.alleleRegistry.createAndRegisterClassification(level.level, classLower, classification[i]);
-				System.out.println("Registering "+level.name+" "+classification[i]);
+				branch = AlleleManager.alleleRegistry
+						.createAndRegisterClassification(level.level,
+								classLower, classification[i]);
+				System.out.println("Registering " + level.name + " "
+						+ classification[i]);
 				newBranch = true;
-			}
-			else {
+			} else {
 				newBranch = false;
 			}
 			if (child != null && newChild) {
 				branch.addMemberGroup(child);
-				System.out.println("Adding child "+child.getName()+" to "+branch.getName());
+				System.out.println("Adding child " + child.getName() + " to "
+						+ branch.getName());
 			}
 			if (level == ClassificationLevel.GENUS) {
 				this.branch = branch;
@@ -148,14 +147,17 @@ public class ModTreeSpecies implements IIconProvider, IAlleleTreeSpecies {
 		}
 		this.branch.addMemberSpecies(this);
 	}
-	
+
 	public void register() {
 		AlleleManager.alleleRegistry.registerAllele(this);
-		IAllele template[] = Util.getTreeRoot().getDefaultTemplate();
+		
 		template[EnumTreeChromosome.SPECIES.ordinal()] = this;
 		Util.getTreeRoot().registerTemplate(template);
-		AlleleManager.ersatzSpecimen.put(this.underlyingLeaves, Util.getTreeRoot().templateAsIndividual(template));
-		AlleleManager.ersatzSaplings.put(this.underlyingSapling, Util.getTreeRoot().templateAsIndividual(template));
+		
+		AlleleManager.ersatzSpecimen.put(this.underlyingLeaves.copy(), Util
+				.getTreeRoot().templateAsIndividual(template));
+		AlleleManager.ersatzSaplings.put(this.underlyingSapling.copy(), Util
+				.getTreeRoot().templateAsIndividual(template));
 	}
 
 	public enum IconType {
@@ -309,22 +311,18 @@ public class ModTreeSpecies implements IIconProvider, IAlleleTreeSpecies {
 	@Override
 	@Deprecated
 	public int getGirth() {
-		return girth;
+		return 0;
 	}
 
 	@Override
 	public WorldGenerator getGenerator(ITree tree, World world, int x, int y,
 			int z) {
-		try {
-			return new WorldGenWrapper(this.gen);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return null;
+		return this.gen;
 	}
 
 	@Override
 	public Class<? extends WorldGenerator>[] getGeneratorClasses() {
+		// I have no idea what this is for.
 		// Object[] result = {this.gen};
 		// return (Class<? extends WorldGenerator>[]) result;
 		return null;
