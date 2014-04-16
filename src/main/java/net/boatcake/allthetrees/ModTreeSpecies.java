@@ -35,16 +35,16 @@ import forestry.api.genetics.IIndividual;
 import forestry.api.genetics.IMutation;
 
 public class ModTreeSpecies implements IIconProvider, IAlleleTreeSpecies {
-	WorldGenerator gen;
-	int color;
-	String species;
-	String uid;
-	IClassification branch;
-	String description;
-	ItemStack underlyingSapling;
-	ItemStack underlyingLeaves;
-	ItemStack underlyingLog;
-	IAllele template[];
+	public WorldGenerator gen;
+	public int color;
+	public String species;
+	public String uid;
+	public IClassification branch;
+	public String description;
+	public ItemStack underlyingSapling;
+	public ItemStack underlyingLeaves;
+	public ItemStack underlyingLog;
+	public IAllele template[];
 
 	public ModTreeSpecies(WorldGenerator gen, IAllele template[], int color,
 			String species, String uid, String description,
