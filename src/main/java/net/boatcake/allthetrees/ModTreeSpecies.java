@@ -200,13 +200,13 @@ public class ModTreeSpecies implements IIconProvider, IAlleleTreeSpecies {
 		return 1 + getGeneticAdvancement(this, new ArrayList());
 	}
 
-	private int getGeneticAdvancement(IAllele species,
+	private static int getGeneticAdvancement(IAllele species,
 			ArrayList<IAllele> exclude) {
 		int own = 1;
 		int highest = 0;
 		exclude.add(species);
 
-		for (IMutation mutation : getRoot().getPaths(species,
+		for (IMutation mutation : Util.getTreeRoot().getPaths(species,
 				EnumTreeChromosome.SPECIES.ordinal())) {
 			if (!exclude.contains(mutation.getAllele0())) {
 				int otherAdvance = getGeneticAdvancement(mutation.getAllele0(),

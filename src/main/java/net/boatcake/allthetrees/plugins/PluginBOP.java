@@ -3,12 +3,16 @@ package net.boatcake.allthetrees.plugins;
 import forestry.api.arboriculture.EnumTreeChromosome;
 import forestry.api.genetics.AlleleManager;
 import forestry.api.genetics.IAllele;
+import net.boatcake.allthetrees.ModFruitAllele;
+import net.boatcake.allthetrees.ModFruitFamily;
+import net.boatcake.allthetrees.ModFruitProvider;
 import net.boatcake.allthetrees.ModTreeSpecies;
 import net.boatcake.allthetrees.Util;
 import net.boatcake.allthetrees.WorldGenWrapper;
 import net.minecraft.block.Block;
 import net.minecraft.item.ItemStack;
 import biomesoplenty.api.BlockReferences;
+import biomesoplenty.api.Items;
 import biomesoplenty.worldgen.WorldGenNetherBush;
 import biomesoplenty.worldgen.tree.*;
 
@@ -137,16 +141,19 @@ public class PluginBOP implements IPlugin {
 				BlockReferences.getBlockItemStack("palmLog"));
 		palm.register();
 		
+		ModFruitFamily fruitFamily = new ModFruitFamily("bop.persimmon", new ItemStack(Items.food.get(), 1, 8), "Diospyros", "");
+		AlleleManager.alleleRegistry.registerFruitFamily(fruitFamily);
+		ModFruitProvider fruitProvider = new ModFruitProvider(new ItemStack(Items.food.get(), 1, 8), BlockReferences.getBlockItemStack("persimmonLeaves"), "", fruitFamily);
+		ModFruitAllele fruitAllele = new ModFruitAllele(new ItemStack(Items.food.get(), 1, 8), "bop.fuitPersimmon", fruitProvider);
+		AlleleManager.alleleRegistry.registerAllele(fruitAllele);
+		
 		ModTreeSpecies persimmon = new ModTreeSpecies(new WorldGenWrapper(new WorldGenPersimmon(false)), 0x787237,
 				new String[] {"ebony", "kaki"},
 				"bop.persimmon",
 				BlockReferences.getBlockItemStack("persimmonSapling"),
 				BlockReferences.getBlockItemStack("persimmonLeaves"),
 				new ItemStack(Block.wood));
-		IAllele fruit = AlleleManager.alleleRegistry.getAllele("forestry.fruitPersimmon");
-		if (fruit != null) {
-			persimmon.template[EnumTreeChromosome.FRUITS.ordinal()] = fruit;
-		}
+		persimmon.template[EnumTreeChromosome.FRUITS.ordinal()] = fruitAllele;
 		persimmon.register();
 		
 		ModTreeSpecies pine = new ModTreeSpecies(new WorldGenWrapper(new WorldGenPineTree()), /*0xA7A7A7*/0x1E4C0A,
